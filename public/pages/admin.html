@@ -3,274 +3,152 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin — Piattaforma Ausili Genova</title>
+  <title>Gestione — Kabel S.r.l.</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; }
-    .topbar {
-      background: #003f7f;
-      color: white;
-      padding: 0.9rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .topbar h1 { font-size: 1.1rem; font-weight: 600; }
-    .topbar small { opacity: 0.75; font-size: 0.8rem; }
-    .nav {
-      background: #002d5c;
-      display: flex;
-      gap: 0;
-    }
-    .nav-btn {
-      padding: 0.75rem 1.5rem;
-      color: rgba(255,255,255,0.7);
-      cursor: pointer;
-      border: none;
-      background: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      border-bottom: 3px solid transparent;
-      transition: all 0.2s;
-    }
-    .nav-btn.active {
-      color: white;
-      border-bottom-color: #60a5fa;
-      background: rgba(255,255,255,0.05);
-    }
-    .content { padding: 1.5rem 2rem; max-width: 1200px; margin: 0 auto; }
-    .tab { display: none; }
-    .tab.active { display: block; }
-
-    /* Stats */
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card {
-      background: white;
-      border-radius: 10px;
-      padding: 1.2rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .stat-card .num { font-size: 2rem; font-weight: 700; color: #003f7f; }
-    .stat-card .lbl { font-size: 0.8rem; color: #6b7280; margin-top: 0.2rem; }
-
-    /* Filtri */
-    .filtri {
-      display: flex;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-    .filtri select, .filtri input {
-      padding: 0.5rem 0.75rem;
-      border: 1.5px solid #d1d5db;
-      border-radius: 7px;
-      font-size: 0.88rem;
-      background: white;
-    }
-
-    /* Tabella */
-    .table-wrap { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    th {
-      background: #f8fafc;
-      padding: 0.75rem 1rem;
-      text-align: left;
-      font-weight: 600;
-      color: #374151;
-      border-bottom: 1.5px solid #e5e7eb;
-      white-space: nowrap;
-    }
-    td {
-      padding: 0.7rem 1rem;
-      border-bottom: 1px solid #f3f4f6;
-      vertical-align: middle;
-    }
-    tr:hover td { background: #f9fafb; }
-    tr:last-child td { border-bottom: none; }
-
-    /* Badges */
-    .badge {
-      display: inline-block;
-      padding: 0.2rem 0.6rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    .badge.in_attesa { background: #fef3c7; color: #92400e; }
-    .badge.in_corso { background: #dbeafe; color: #1e40af; }
-    .badge.chiusa { background: #dcfce7; color: #166534; }
-    .badge.urgente { background: #fee2e2; color: #991b1b; }
-    .badge.normale { background: #f3f4f6; color: #374151; }
-    .badge.magazzino { background: #e0e7ff; color: #3730a3; }
-    .badge.scuola { background: #dcfce7; color: #166534; }
-
-    /* Pulsanti azione */
-    .btn {
-      padding: 0.3rem 0.7rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      font-weight: 500;
-      transition: opacity 0.2s;
-    }
-    .btn:hover { opacity: 0.8; }
-    .btn-blue { background: #dbeafe; color: #1e40af; }
-    .btn-green { background: #dcfce7; color: #166534; }
-    .btn-red { background: #fee2e2; color: #991b1b; }
-    .btn-orange { background: #ffedd5; color: #9a3412; }
-
-    /* Modal spostamento */
-    .modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.4);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal {
-      background: white;
-      border-radius: 12px;
-      padding: 2rem;
-      width: 90%;
-      max-width: 480px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-    }
-    .modal h3 { margin-bottom: 1rem; color: #003f7f; }
-    .modal select, .modal textarea, .modal input {
-      width: 100%;
-      padding: 0.6rem 0.8rem;
-      border: 1.5px solid #d1d5db;
-      border-radius: 7px;
-      font-size: 0.9rem;
-      margin-bottom: 0.75rem;
-      font-family: inherit;
-    }
-    .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem; }
-    .empty { text-align: center; color: #9ca3af; padding: 3rem; font-size: 0.95rem; }
-
-    @media (max-width: 768px) {
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      .content { padding: 1rem; }
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--blu:#1a3a5c;--blu2:#2563a8;--oro:#e8a020;--bg:#f4f6f9;--testo:#1e2d3d;--grigio:#6b7a8d;--bordo:#dde3ea}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--testo)}
+    .navbar{background:var(--blu);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+    .nb{display:flex;align-items:center;gap:.75rem}
+    .logo{width:36px;height:36px;background:var(--oro);color:var(--blu);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:1.2rem;font-weight:700}
+    .bn{color:#fff;font-weight:600;font-size:.95rem;display:block}
+    .bs{color:rgba(255,255,255,.55);font-size:.72rem;display:block}
+    .nl{display:flex;gap:.25rem}
+    .nl a{display:flex;align-items:center;gap:.4rem;padding:.5rem 1.2rem;color:rgba(255,255,255,.7);text-decoration:none;border-radius:7px;font-size:.9rem;font-weight:500;transition:all .2s}
+    .nl a:hover{background:rgba(255,255,255,.1);color:#fff}
+    .nl a.active{background:var(--oro);color:var(--blu);font-weight:600}
+    .tabs{background:#fff;border-bottom:1.5px solid var(--bordo);display:flex;padding:0 2rem;overflow-x:auto}
+    .tbtn{padding:1rem 1.25rem;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;color:var(--grigio);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
+    .tbtn.active{color:var(--blu);border-bottom-color:var(--blu2);font-weight:600}
+    .content{padding:1.5rem 2rem;max-width:1200px;margin:0 auto}
+    .tab{display:none}.tab.active{display:block}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+    .stat{background:#fff;border-radius:10px;padding:1.2rem;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .stat .num{font-size:2rem;font-weight:700;color:var(--blu)}
+    .stat .lbl{font-size:.8rem;color:var(--grigio);margin-top:.2rem}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem}
+    .filtri{display:flex;gap:.75rem;flex-wrap:wrap}
+    .filtri select,.filtri input{padding:.5rem .75rem;border:1.5px solid var(--bordo);border-radius:7px;font-size:.88rem;background:#fff;font-family:'DM Sans',sans-serif}
+    .btnex{padding:.5rem 1.2rem;background:#16a34a;color:#fff;border:none;border-radius:7px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+    .btnex:hover{background:#15803d}
+    .cnt{font-size:.85rem;color:var(--grigio)}
+    .tw{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:auto}
+    table{width:100%;border-collapse:collapse;font-size:.88rem}
+    th{background:#f8fafc;padding:.75rem 1rem;text-align:left;font-weight:600;color:var(--grigio);border-bottom:1.5px solid var(--bordo);white-space:nowrap;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+    td{padding:.7rem 1rem;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+    tr:hover td{background:#f9fafb}
+    tr:last-child td{border-bottom:none}
+    .badge{display:inline-block;padding:.2rem .6rem;border-radius:20px;font-size:.75rem;font-weight:600}
+    .badge.in_attesa{background:#fef3c7;color:#92400e}
+    .badge.in_corso{background:#dbeafe;color:#1e40af}
+    .badge.chiusa{background:#dcfce7;color:#166534}
+    .badge.urgente{background:#fee2e2;color:#991b1b}
+    .badge.scuola{background:#dcfce7;color:#166634}
+    .badge.magazzino{background:#e0e7ff;color:#3730a3}
+    .btn{padding:.3rem .7rem;border:none;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:500;font-family:'DM Sans',sans-serif;margin-right:.25rem}
+    .btn-blue{background:#dbeafe;color:#1e40af}
+    .btn-green{background:#dcfce7;color:#166634}
+    .btn-orange{background:#ffedd5;color:#9a3412}
+    .btn-red{background:#fee2e2;color:#991b1b}
+    .empty{text-align:center;color:var(--grigio);padding:3rem}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+    .modal-overlay.open{display:flex}
+    .modal{background:#fff;border-radius:12px;padding:2rem;width:90%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+    .modal h3{margin-bottom:1rem;color:var(--blu);font-family:'DM Serif Display',serif}
+    .modal select,.modal textarea{width:100%;padding:.6rem .8rem;border:1.5px solid var(--bordo);border-radius:7px;font-size:.9rem;margin-bottom:.75rem;font-family:'DM Sans',sans-serif}
+    .modal-body table{width:100%;font-size:.88rem}
+    .modal-body td{padding:.4rem .6rem;border-bottom:1px solid #f3f4f6}
+    .modal-actions{display:flex;gap:.75rem;justify-content:flex-end;margin-top:.5rem}
+    @media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.content{padding:1rem}}
   </style>
 </head>
 <body>
-
-<div class="topbar">
-  <div>
-    <h1>🏛️ Piattaforma Ausili — Comune di Genova</h1>
-    <small>Pannello di amministrazione</small>
+<nav class="navbar">
+  <div class="nb">
+    <div class="logo">K</div>
+    <div><span class="bn">Kabel S.r.l.</span><span class="bs">Gestione Ausili — Comune di Genova</span></div>
   </div>
-  <a href="/pages/segnala.html" target="_blank" style="color:white; font-size:0.85rem; opacity:0.8;">
-    📨 Pagina segnalazioni →
-  </a>
-</div>
+  <div class="nl">
+    <a href="/pages/segnala.html">📨 Segnalazioni</a>
+    <a href="/pages/admin.html" class="active">⚙️ Gestione</a>
+  </div>
+</nav>
 
-<div class="nav">
-  <button class="nav-btn active" onclick="showTab('segnalazioni')">📋 Segnalazioni</button>
-  <button class="nav-btn" onclick="showTab('inventario')">📦 Inventario</button>
-  <button class="nav-btn" onclick="showTab('spostamenti')">🚚 Spostamenti</button>
+<div class="tabs">
+  <button class="tbtn active" onclick="showTab('segnalazioni',this)">📋 Segnalazioni ricevute</button>
+  <button class="tbtn" onclick="showTab('scuole',this)">🏫 Ausili nelle scuole</button>
+  <button class="tbtn" onclick="showTab('magazzino',this)">📦 Magazzino</button>
+  <button class="tbtn" onclick="showTab('storico',this)">🚚 Storico spostamenti</button>
 </div>
 
 <div class="content">
 
-  <!-- TAB SEGNALAZIONI -->
+  <!-- SEGNALAZIONI -->
   <div id="tab-segnalazioni" class="tab active">
-    <div class="stats" id="stats-segnalazioni">
-      <div class="stat-card"><div class="num" id="s-totale">—</div><div class="lbl">Totale segnalazioni</div></div>
-      <div class="stat-card"><div class="num" id="s-attesa">—</div><div class="lbl">In attesa</div></div>
-      <div class="stat-card"><div class="num" id="s-corso">—</div><div class="lbl">In corso</div></div>
-      <div class="stat-card"><div class="num" id="s-chiuse">—</div><div class="lbl">Chiuse</div></div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="s-tot">—</div><div class="lbl">Segnalazioni totali</div></div>
+      <div class="stat"><div class="num" id="s-att">—</div><div class="lbl">In attesa</div></div>
+      <div class="stat"><div class="num" id="s-cor">—</div><div class="lbl">In corso</div></div>
+      <div class="stat"><div class="num" id="s-chi">—</div><div class="lbl">Chiuse</div></div>
     </div>
-    <div class="filtri">
-      <select id="filtro-stato" onchange="loadSegnalazioni()">
-        <option value="">Tutti gli stati</option>
-        <option value="in_attesa">In attesa</option>
-        <option value="in_corso">In corso</option>
-        <option value="chiusa">Chiusa</option>
-      </select>
-      <select id="filtro-tipo" onchange="loadSegnalazioni()">
-        <option value="">Tutti i tipi</option>
-        <option>Manutenzione straordinaria</option>
-        <option>Manutenzione ordinaria</option>
-        <option>Trasporto / Spostamento</option>
-        <option>Pulizia e disinfezione</option>
-        <option>Consulenza tecnica</option>
-        <option>Rottamazione</option>
-      </select>
+    <div class="stats" style="margin-top:-.5rem">
+      <div class="stat" style="border-left:4px solid #16a34a"><div class="num" style="color:#16a34a" id="a-scuole">—</div><div class="lbl">Ausili nelle scuole</div></div>
+      <div class="stat" style="border-left:4px solid #2563a8"><div class="num" style="color:#2563a8" id="a-mag">—</div><div class="lbl">Ausili in magazzino</div></div>
+      <div class="stat" style="border-left:4px solid var(--oro)"><div class="num" style="color:var(--oro)" id="a-tot">—</div><div class="lbl">Totale ausili gestiti</div></div>
+      <div class="stat"><div class="num" id="a-spo">—</div><div class="lbl">Spostamenti registrati</div></div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Data</th>
-            <th>Priorità</th>
-            <th>Tipo</th>
-            <th>Scuola</th>
-            <th>Ausilio</th>
-            <th>Funzionario</th>
-            <th>Stato</th>
-            <th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-segnalazioni">
-          <tr><td colspan="9" class="empty">Caricamento...</td></tr>
-        </tbody>
-      </table>
+    <div class="toolbar">
+      <div class="filtri">
+        <select id="f-stato" onchange="loadSeg()"><option value="">Tutti gli stati</option><option value="in_attesa">In attesa</option><option value="in_corso">In corso</option><option value="chiusa">Chiusa</option></select>
+        <select id="f-tipo" onchange="loadSeg()"><option value="">Tutti i tipi</option><option>Manutenzione straordinaria</option><option>Manutenzione ordinaria</option><option>Trasporto / Spostamento</option><option>Pulizia e disinfezione</option><option>Consulenza tecnica</option><option>Rottamazione</option></select>
+      </div>
     </div>
+    <div class="tw"><table><thead><tr><th>#</th><th>Data</th><th>Priorità</th><th>Tipo</th><th>Scuola</th><th>Ausilio</th><th>Funzionario</th><th>Stato</th><th>Azioni</th></tr></thead><tbody id="tb-seg"><tr><td colspan="9" class="empty">Caricamento...</td></tr></tbody></table></div>
   </div>
 
-  <!-- TAB INVENTARIO -->
-  <div id="tab-inventario" class="tab">
-    <div class="filtri">
-      <select id="filtro-posizione" onchange="loadInventario()">
-        <option value="">Tutte le posizioni</option>
-        <option value="magazzino">Magazzino</option>
-      </select>
-      <input type="text" id="filtro-cerca" placeholder="🔍 Cerca per nome o codice..." oninput="filterInventario()" style="min-width:250px;">
+  <!-- AUSILI NELLE SCUOLE -->
+  <div id="tab-scuole" class="tab">
+    <div class="toolbar">
+      <div class="filtri">
+        <select id="f-scuola" onchange="filterS()"><option value="">Tutte le scuole</option></select>
+        <input type="text" id="c-scuola" placeholder="🔍 Cerca ausilio..." oninput="filterS()" style="min-width:200px">
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem">
+        <span class="cnt" id="cnt-s"></span>
+        <button class="btnex" onclick="exportEx('scuole')">⬇ Excel</button>
+      </div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>ID Inventario</th>
-            <th>Codice</th>
-            <th>Nome</th>
-            <th>Categoria</th>
-            <th>Posizione attuale</th>
-            <th>Tipo</th>
-            <th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-inventario">
-          <tr><td colspan="7" class="empty">Caricamento...</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <div class="tw"><table><thead><tr><th>ID</th><th>Codice</th><th>Ausilio</th><th>Scuola</th><th>Azioni</th></tr></thead><tbody id="tb-s"><tr><td colspan="5" class="empty">Caricamento...</td></tr></tbody></table></div>
   </div>
 
-  <!-- TAB SPOSTAMENTI -->
-  <div id="tab-spostamenti" class="tab">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Ausilio</th>
-            <th>Da</th>
-            <th>A</th>
-            <th>Note</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-spostamenti">
-          <tr><td colspan="5" class="empty">Caricamento...</td></tr>
-        </tbody>
-      </table>
+  <!-- MAGAZZINO -->
+  <div id="tab-magazzino" class="tab">
+    <div class="toolbar">
+      <div class="filtri">
+        <input type="text" id="c-mag" placeholder="🔍 Cerca ausilio..." oninput="filterM()" style="min-width:250px">
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem">
+        <span class="cnt" id="cnt-m"></span>
+        <button class="btnex" onclick="exportEx('magazzino')">⬇ Excel</button>
+      </div>
     </div>
+    <div class="tw"><table><thead><tr><th>ID</th><th>Codice</th><th>Ausilio</th><th>Categoria</th><th>Azioni</th></tr></thead><tbody id="tb-m"><tr><td colspan="5" class="empty">Caricamento...</td></tr></tbody></table></div>
+  </div>
+
+  <!-- STORICO -->
+  <div id="tab-storico" class="tab">
+    <div class="toolbar">
+      <div class="filtri">
+        <input type="text" id="c-st" placeholder="🔍 Cerca..." oninput="filterSt()" style="min-width:250px">
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem">
+        <span class="cnt" id="cnt-st"></span>
+        <button class="btnex" onclick="exportEx('storico')">⬇ Excel</button>
+      </div>
+    </div>
+    <div class="tw"><table><thead><tr><th>Data</th><th>ID</th><th>Ausilio</th><th>Da</th><th>A</th><th>Note</th></tr></thead><tbody id="tb-st"><tr><td colspan="6" class="empty">Nessuno spostamento</td></tr></tbody></table></div>
   </div>
 
 </div>
@@ -279,250 +157,169 @@
 <div class="modal-overlay" id="modal-sposta">
   <div class="modal">
     <h3>🚚 Sposta Ausilio</h3>
-    <p style="font-size:0.85rem; color:#6b7280; margin-bottom:1rem;" id="modal-ausilio-nome"></p>
-    <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:0.3rem;">Nuova destinazione</label>
-    <select id="modal-destinazione"></select>
-    <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:0.3rem;">Note (opzionale)</label>
-    <textarea id="modal-note" placeholder="Es. Spostamento per inizio anno scolastico..." rows="3"></textarea>
+    <p style="font-size:.85rem;color:var(--grigio);margin-bottom:1rem" id="modal-nome"></p>
+    <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem;color:var(--grigio);text-transform:uppercase">Nuova destinazione</label>
+    <select id="modal-dest"></select>
+    <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem;color:var(--grigio);text-transform:uppercase">Note (opzionale)</label>
+    <textarea id="modal-note" rows="3" placeholder="Es. Spostamento per inizio anno scolastico..."></textarea>
     <div class="modal-actions">
-      <button class="btn btn-red" onclick="chiudiModal()">Annulla</button>
+      <button class="btn btn-red" onclick="chiudiModal('modal-sposta')">Annulla</button>
       <button class="btn btn-green" onclick="confermaSposta()">✓ Conferma spostamento</button>
     </div>
   </div>
 </div>
 
 <!-- Modal dettaglio segnalazione -->
-<div class="modal-overlay" id="modal-dettaglio">
+<div class="modal-overlay" id="modal-det">
   <div class="modal">
     <h3>📋 Dettaglio Segnalazione</h3>
-    <div id="modal-dettaglio-body" style="font-size:0.9rem; line-height:1.8;"></div>
-    <div class="modal-actions">
-      <button class="btn btn-blue" onclick="chiudiModalDettaglio()">Chiudi</button>
-    </div>
+    <div class="modal-body" id="modal-det-body"></div>
+    <div class="modal-actions"><button class="btn btn-blue" onclick="chiudiModal('modal-det')">Chiudi</button></div>
   </div>
 </div>
 
 <script>
-let ausiliAll = [];
-let scuoleAll = [];
-let ausilioSposta = null;
+let dS=[],dM=[],dSt=[],scuoleAll=[],spostaId=null;
 
-// Navigazione tab
-function showTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
-  if (name === 'segnalazioni') loadSegnalazioni();
-  if (name === 'inventario') loadInventario();
-  if (name === 'spostamenti') loadSpostamenti();
+function showTab(n,b){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tbtn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+n).classList.add('active');b.classList.add('active');
+  if(n==='segnalazioni')loadSeg();
+  if(n==='scuole'||n==='magazzino')loadAusili();
+  if(n==='storico')loadSto();
 }
 
-// Formatta data
-function fmtData(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-}
+function fd(iso){if(!iso)return'—';return new Date(iso).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+function chiudiModal(id){document.getElementById(id).classList.remove('open')}
 
-// ===== SEGNALAZIONI =====
-async function loadSegnalazioni() {
-  const stato = document.getElementById('filtro-stato').value;
-  const tipo = document.getElementById('filtro-tipo').value;
-  let url = '/api/segnalazioni';
-  if (stato) url += '?stato=' + stato;
-
-  const res = await fetch(url);
-  let data = await res.json();
-
-  if (tipo) data = data.filter(s => s.tipo === tipo);
-
-  // Stats
-  const tutti = data;
-  document.getElementById('s-totale').textContent = tutti.length;
-  document.getElementById('s-attesa').textContent = tutti.filter(s => s.stato === 'in_attesa').length;
-  document.getElementById('s-corso').textContent = tutti.filter(s => s.stato === 'in_corso').length;
-  document.getElementById('s-chiuse').textContent = tutti.filter(s => s.stato === 'chiusa').length;
-
-  const tbody = document.getElementById('tbody-segnalazioni');
-  if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty">Nessuna segnalazione trovata</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = data.map(s => `
-    <tr>
-      <td><strong>#${s.id}</strong></td>
-      <td>${fmtData(s.created_at)}</td>
-      <td><span class="badge ${s.urgente ? 'urgente' : 'normale'}">${s.urgente ? '🔴 Urgente' : '🟡 Normale'}</span></td>
-      <td>${s.tipo}</td>
-      <td>${s.scuola}</td>
-      <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.ausilio_nome || '—'}</td>
-      <td>${s.nome_funzionario}</td>
-      <td><span class="badge ${s.stato}">${s.stato.replace('_', ' ')}</span></td>
-      <td style="white-space:nowrap;">
-        <button class="btn btn-blue" onclick="vediDettaglio(${s.id})">Dettaglio</button>
-        ${s.stato === 'in_attesa' ? `<button class="btn btn-orange" onclick="aggiornaStato(${s.id}, 'in_corso')">▶ In corso</button>` : ''}
-        ${s.stato === 'in_corso' ? `<button class="btn btn-green" onclick="aggiornaStato(${s.id}, 'chiusa')">✓ Chiudi</button>` : ''}
-      </td>
-    </tr>
-  `).join('');
-}
-
-let segnalazioniCache = [];
-async function vediDettaglio(id) {
-  const res = await fetch('/api/segnalazioni');
-  const data = await res.json();
-  const s = data.find(x => x.id === id);
-  if (!s) return;
-
-  document.getElementById('modal-dettaglio-body').innerHTML = `
-    <table style="width:100%; font-size:0.88rem;">
-      <tr><td style="color:#6b7280; width:40%">ID</td><td><strong>#${s.id}</strong></td></tr>
-      <tr><td style="color:#6b7280">Data</td><td>${fmtData(s.created_at)}</td></tr>
-      <tr><td style="color:#6b7280">Priorità</td><td>${s.urgente ? '🔴 Urgente (24h)' : '🟡 Normale (48h)'}</td></tr>
-      <tr><td style="color:#6b7280">Tipo</td><td>${s.tipo}</td></tr>
-      <tr><td style="color:#6b7280">Scuola</td><td>${s.scuola}</td></tr>
-      <tr><td style="color:#6b7280">Ausilio</td><td>${s.ausilio_nome || '—'}</td></tr>
-      <tr><td style="color:#6b7280">Note</td><td>${s.note || '—'}</td></tr>
-      <tr><td style="color:#6b7280">Funzionario</td><td>${s.nome_funzionario}</td></tr>
-      <tr><td style="color:#6b7280">Email</td><td><a href="mailto:${s.email_funzionario}">${s.email_funzionario}</a></td></tr>
-      <tr><td style="color:#6b7280">Stato</td><td><span class="badge ${s.stato}">${s.stato.replace('_',' ')}</span></td></tr>
-      ${s.data_chiusura ? `<tr><td style="color:#6b7280">Chiusa il</td><td>${fmtData(s.data_chiusura)}</td></tr>` : ''}
-    </table>
-  `;
-  document.getElementById('modal-dettaglio').classList.add('open');
-}
-
-function chiudiModalDettaglio() {
-  document.getElementById('modal-dettaglio').classList.remove('open');
-}
-
-async function aggiornaStato(id, stato) {
-  await fetch('/api/segnalazioni/' + id + '/stato', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ stato }),
+// SEGNALAZIONI
+async function loadSeg(){
+  const stato=document.getElementById('f-stato').value;
+  const tipo=document.getElementById('f-tipo').value;
+  let url='/api/segnalazioni';if(stato)url+='?stato='+stato;
+  const r=await fetch(url);let d=await r.json();
+  if(tipo)d=d.filter(s=>s.tipo===tipo);
+  document.getElementById('s-tot').textContent=d.length;
+  document.getElementById('s-att').textContent=d.filter(s=>s.stato==='in_attesa').length;
+  document.getElementById('s-cor').textContent=d.filter(s=>s.stato==='in_corso').length;
+  document.getElementById('s-chi').textContent=d.filter(s=>s.stato==='chiusa').length;
+  // Carica stats ausili
+  fetch('/api/ausili').then(r=>r.json()).then(all=>{
+    const sc=all.filter(a=>a.posizione_tipo==='scuola').length;
+    const mg=all.filter(a=>a.posizione_tipo==='magazzino').length;
+    document.getElementById('a-scuole').textContent=sc;
+    document.getElementById('a-mag').textContent=mg;
+    document.getElementById('a-tot').textContent=sc+mg;
   });
-  loadSegnalazioni();
+  fetch('/api/spostamenti').then(r=>r.ok?r.json():[]).then(sp=>{ document.getElementById('a-spo').textContent=sp.length; }).catch(()=>{});
+  const tb=document.getElementById('tb-seg');
+  if(d.length===0){tb.innerHTML='<tr><td colspan="9" class="empty">Nessuna segnalazione</td></tr>';return}
+  tb.innerHTML=d.map(s=>`<tr>
+    <td><strong>#${s.id}</strong></td>
+    <td>${fd(s.created_at)}</td>
+    <td><span class="badge ${s.urgente?'urgente':''}">${s.urgente?'🔴 Urgente':'🟡 Normale'}</span></td>
+    <td>${s.tipo}</td><td>${s.scuola}</td>
+    <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.ausilio_nome||'—'}</td>
+    <td>${s.nome_funzionario}</td>
+    <td><span class="badge ${s.stato}">${s.stato.replace('_',' ')}</span></td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-blue" onclick="vediDet(${s.id})">Det.</button>
+      ${s.stato==='in_attesa'?`<button class="btn btn-orange" onclick="aggStato(${s.id},'in_corso')">▶ Prendi in carico</button>`:''}
+      ${s.stato==='in_corso'?`<button class="btn btn-green" onclick="aggStato(${s.id},'chiusa')">✓ Chiudi</button>`:''}
+    </td>
+  </tr>`).join('');
 }
 
-// ===== INVENTARIO =====
-async function loadInventario() {
-  const posizione = document.getElementById('filtro-posizione').value;
-  let url = '/api/ausili';
-  if (posizione) url += '?posizione=' + encodeURIComponent(posizione);
-
-  const res = await fetch(url);
-  ausiliAll = await res.json();
-  renderInventario(ausiliAll);
+async function vediDet(id){
+  const r=await fetch('/api/segnalazioni');const d=await r.json();const s=d.find(x=>x.id===id);if(!s)return;
+  document.getElementById('modal-det-body').innerHTML=`<table>
+    <tr><td style="color:var(--grigio);width:40%">ID</td><td><strong>#${s.id}</strong></td></tr>
+    <tr><td style="color:var(--grigio)">Data</td><td>${fd(s.created_at)}</td></tr>
+    <tr><td style="color:var(--grigio)">Priorità</td><td>${s.urgente?'🔴 Urgente (24h)':'🟡 Normale (48h)'}</td></tr>
+    <tr><td style="color:var(--grigio)">Tipo</td><td>${s.tipo}</td></tr>
+    <tr><td style="color:var(--grigio)">Scuola</td><td>${s.scuola}</td></tr>
+    <tr><td style="color:var(--grigio)">Ausilio</td><td>${s.ausilio_nome||'—'}</td></tr>
+    <tr><td style="color:var(--grigio)">Note</td><td>${s.note||'—'}</td></tr>
+    <tr><td style="color:var(--grigio)">Funzionario</td><td>${s.nome_funzionario}</td></tr>
+    <tr><td style="color:var(--grigio)">Email</td><td><a href="mailto:${s.email_funzionario}">${s.email_funzionario}</a></td></tr>
+    <tr><td style="color:var(--grigio)">Stato</td><td><span class="badge ${s.stato}">${s.stato.replace('_',' ')}</span></td></tr>
+  </table>`;
+  document.getElementById('modal-det').classList.add('open');
 }
 
-function filterInventario() {
-  const q = document.getElementById('filtro-cerca').value.toLowerCase();
-  const filtered = ausiliAll.filter(a =>
-    a.nome.toLowerCase().includes(q) ||
-    (a.codice && a.codice.toLowerCase().includes(q)) ||
-    String(a.inv_id).includes(q)
-  );
-  renderInventario(filtered);
+async function aggStato(id,stato){
+  await fetch('/api/segnalazioni/'+id+'/stato',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({stato})});
+  loadSeg();
 }
 
-function renderInventario(data) {
-  const tbody = document.getElementById('tbody-inventario');
-  if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">Nessun ausilio trovato</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.map(a => `
-    <tr>
-      <td><strong>${a.inv_id || '—'}</strong></td>
-      <td style="font-size:0.8rem; color:#6b7280;">${a.codice}</td>
-      <td>${a.nome}</td>
-      <td style="font-size:0.8rem;">${a.categoria || '—'}</td>
-      <td><strong>${a.posizione_attuale}</strong></td>
-      <td><span class="badge ${a.posizione_tipo}">${a.posizione_tipo}</span></td>
-      <td>
-        <button class="btn btn-orange" onclick="apriSposta(${a.id}, '${a.nome.replace(/'/g,"\\'")}', '${a.posizione_attuale.replace(/'/g,"\\'")}')">🚚 Sposta</button>
-      </td>
-    </tr>
-  `).join('');
+// AUSILI
+async function loadAusili(){
+  if(dS.length>0&&dM.length>0)return;
+  const r=await fetch('/api/ausili');const all=await r.json();
+  dS=all.filter(a=>a.posizione_tipo==='scuola');
+  dM=all.filter(a=>a.posizione_tipo==='magazzino');
+  const su=[...new Set(dS.map(a=>a.posizione_attuale))].sort();
+  const sel=document.getElementById('f-scuola');
+  su.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o)});
+  renderS(dS);renderM(dM);
 }
 
-// ===== SPOSTAMENTI =====
-async function loadSpostamenti() {
-  // Carica tutti gli ausili e mostra la history degli spostamenti
-  const res = await fetch('/api/ausili');
-  const ausili = await res.json();
-
-  // Fetch spostamenti per ogni ausilio (usiamo l'endpoint singolo)
-  const spostamentiRes = await fetch('/api/spostamenti');
-  let data = [];
-  if (spostamentiRes.ok) {
-    data = await spostamentiRes.json();
-  }
-
-  const tbody = document.getElementById('tbody-spostamenti');
-  if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">Nessuno spostamento registrato</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.map(s => `
-    <tr>
-      <td>${fmtData(s.data)}</td>
-      <td>${s.ausilio_nome || 'ID ' + s.ausilio_id}</td>
-      <td>${s.da}</td>
-      <td><strong>${s.a}</strong></td>
-      <td style="font-size:0.85rem; color:#6b7280;">${s.note || '—'}</td>
-    </tr>
-  `).join('');
+function filterS(){const sc=document.getElementById('f-scuola').value;const q=document.getElementById('c-scuola').value.toLowerCase();renderS(dS.filter(a=>(!sc||a.posizione_attuale===sc)&&(!q||a.nome.toLowerCase().includes(q)||String(a.inv_id).includes(q))))}
+function renderS(d){
+  document.getElementById('cnt-s').textContent=d.length+' ausili';
+  document.getElementById('tb-s').innerHTML=d.length===0?'<tr><td colspan="5" class="empty">Nessun ausilio</td></tr>':
+  d.map(a=>`<tr><td><strong>${a.inv_id||'—'}</strong></td><td style="color:var(--grigio);font-size:.82rem">${a.codice||'—'}</td><td>${a.nome}</td><td><span class="badge scuola">${a.posizione_attuale}</span></td><td><button class="btn btn-orange" onclick="apriSposta(${a.id},'${a.nome.replace(/'/g,"\\'")}','${a.posizione_attuale.replace(/'/g,"\\'")}')">🚚 Sposta</button></td></tr>`).join('');
 }
 
-// ===== MODAL SPOSTAMENTO =====
-async function apriSposta(id, nome, posizioneAttuale) {
-  ausilioSposta = { id, nome, posizioneAttuale };
-  document.getElementById('modal-ausilio-nome').textContent = nome + ' — attualmente in: ' + posizioneAttuale;
+function filterM(){const q=document.getElementById('c-mag').value.toLowerCase();renderM(dM.filter(a=>!q||a.nome.toLowerCase().includes(q)||String(a.inv_id).includes(q)))}
+function renderM(d){
+  document.getElementById('cnt-m').textContent=d.length+' ausili';
+  document.getElementById('tb-m').innerHTML=d.length===0?'<tr><td colspan="5" class="empty">Nessun ausilio</td></tr>':
+  d.map(a=>`<tr><td><strong>${a.inv_id||'—'}</strong></td><td style="color:var(--grigio);font-size:.82rem">${a.codice||'—'}</td><td>${a.nome}</td><td style="font-size:.82rem">${a.categoria||'—'}</td><td><button class="btn btn-orange" onclick="apriSposta(${a.id},'${a.nome.replace(/'/g,"\\'")}','${a.posizione_attuale.replace(/'/g,"\\'")}')">🚚 Sposta</button></td></tr>`).join('');
+}
 
-  // Carica scuole
-  if (scuoleAll.length === 0) {
-    const res = await fetch('/api/ausili/meta/scuole');
-    scuoleAll = await res.json();
-  }
+// STORICO
+async function loadSto(){
+  try{const r=await fetch('/api/spostamenti');if(!r.ok)return;dSt=await r.json();renderSt(dSt)}catch(e){}
+}
+function filterSt(){const q=document.getElementById('c-st').value.toLowerCase();renderSt(dSt.filter(s=>!q||(s.ausilio_nome&&s.ausilio_nome.toLowerCase().includes(q))||s.da.toLowerCase().includes(q)||s.a.toLowerCase().includes(q)))}
+function renderSt(d){
+  document.getElementById('cnt-st').textContent=d.length+' spostamenti';
+  document.getElementById('tb-st').innerHTML=d.length===0?'<tr><td colspan="6" class="empty">Nessuno spostamento</td></tr>':
+  d.map(s=>`<tr><td>${fd(s.data)}</td><td>${s.inv_id||'—'}</td><td>${s.ausilio_nome||'—'}</td><td>${s.da}</td><td><strong>${s.a}</strong></td><td style="color:var(--grigio);font-size:.85rem">${s.note||'—'}</td></tr>`).join('');
+}
 
-  const sel = document.getElementById('modal-destinazione');
-  sel.innerHTML = scuoleAll
-    .map(s => `<option value="${s.nome}" ${s.nome === posizioneAttuale ? 'disabled' : ''}>${s.nome}</option>`)
-    .join('');
-
-  document.getElementById('modal-note').value = '';
+// SPOSTAMENTO
+async function apriSposta(id,nome,pos){
+  spostaId={id,nome,pos};
+  document.getElementById('modal-nome').textContent=nome+' — attualmente: '+pos;
+  if(scuoleAll.length===0){const r=await fetch('/api/ausili/meta/scuole');scuoleAll=await r.json()}
+  const sel=document.getElementById('modal-dest');
+  sel.innerHTML=scuoleAll.map(s=>`<option value="${s.nome}" ${s.nome===pos?'disabled':''}>${s.nome}</option>`).join('');
+  document.getElementById('modal-note').value='';
   document.getElementById('modal-sposta').classList.add('open');
 }
 
-function chiudiModal() {
-  document.getElementById('modal-sposta').classList.remove('open');
-  ausilioSposta = null;
+async function confermaSposta(){
+  if(!spostaId)return;
+  const dest=document.getElementById('modal-dest').value;
+  const note=document.getElementById('modal-note').value.trim();
+  const r=await fetch('/api/ausili/'+spostaId.id+'/sposta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nuova_posizione:dest,note})});
+  if(r.ok){chiudiModal('modal-sposta');dS=[];dM=[];loadAusili()}else alert('Errore durante lo spostamento');
 }
 
-async function confermaSposta() {
-  if (!ausilioSposta) return;
-  const nuova_posizione = document.getElementById('modal-destinazione').value;
-  const note = document.getElementById('modal-note').value.trim();
-
-  const res = await fetch('/api/ausili/' + ausilioSposta.id + '/sposta', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nuova_posizione, note }),
-  });
-
-  if (res.ok) {
-    chiudiModal();
-    loadInventario();
-  } else {
-    alert('Errore durante lo spostamento');
-  }
+// EXPORT EXCEL
+function exportEx(t){
+  let d,f,h;
+  if(t==='scuole'){h=['ID','Codice','Ausilio','Scuola'];d=dS.map(a=>[a.inv_id,a.codice,a.nome,a.posizione_attuale]);f='ausili_scuole.xlsx'}
+  else if(t==='magazzino'){h=['ID','Codice','Ausilio','Categoria'];d=dM.map(a=>[a.inv_id,a.codice,a.nome,a.categoria]);f='magazzino.xlsx'}
+  else{h=['Data','ID','Ausilio','Da','A','Note'];d=dSt.map(s=>[fd(s.data),s.inv_id,s.ausilio_nome,s.da,s.a,s.note||'']);f='storico.xlsx'}
+  const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet([h,...d]);
+  ws['!cols']=h.map(()=>({wch:30}));XLSX.utils.book_append_sheet(wb,ws,t);XLSX.writeFile(wb,f);
 }
 
-// Init
-loadSegnalazioni();
+loadSeg();
 </script>
 </body>
 </html>
