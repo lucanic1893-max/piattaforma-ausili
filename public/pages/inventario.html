@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventario Ausili — Comune di Genova</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; }
+    .topbar {
+      background: #003f7f;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar h1 { font-size: 1.1rem; font-weight: 600; }
+    .topbar small { opacity: 0.75; font-size: 0.8rem; }
+    .topbar a { color: white; font-size: 0.85rem; opacity: 0.85; text-decoration: none; background: rgba(255,255,255,0.15); padding: 0.4rem 1rem; border-radius: 6px; }
+    .topbar a:hover { opacity: 1; background: rgba(255,255,255,0.25); }
+    .nav {
+      background: #002d5c;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    .nav-btn {
+      padding: 0.75rem 1.5rem;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .nav-btn.active {
+      color: white;
+      border-bottom-color: #60a5fa;
+      background: rgba(255,255,255,0.05);
+    }
+    .content { padding: 1.5rem 2rem; max-width: 1200px; margin: 0 auto; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .filtri { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .filtri select, .filtri input {
+      padding: 0.5rem 0.75rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 7px;
+      font-size: 0.88rem;
+      background: white;
+    }
+    .btn-export {
+      padding: 0.5rem 1.2rem;
+      background: #16a34a;
+      color: white;
+      border: none;
+      border-radius: 7px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn-export:hover { background: #15803d; }
+
+    .table-wrap {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      overflow: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th {
+      background: #f8fafc;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 1.5px solid #e5e7eb;
+      white-space: nowrap;
+    }
+    td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid #f3f4f6;
+      vertical-align: middle;
+    }
+    tr:hover td { background: #f9fafb; }
+    tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.magazzino { background: #e0e7ff; color: #3730a3; }
+    .badge.scuola { background: #dcfce7; color: #166534; }
+    .empty { text-align: center; color: #9ca3af; padding: 3rem; font-size: 0.95rem; }
+    .counter { font-size: 0.85rem; color: #6b7280; }
+
+    @media (max-width: 768px) {
+      .content { padding: 1rem; }
+      .toolbar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>🏛️ Inventario Ausili — Comune di Genova</h1>
+    <small>Direzione Servizi Educativi</small>
+  </div>
+  <a href="/pages/segnala.html">📨 Nuova segnalazione</a>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showTab('scuole', this)">🏫 Ausili nelle scuole</button>
+  <button class="nav-btn" onclick="showTab('magazzino', this)">📦 Magazzino</button>
+  <button class="nav-btn" onclick="showTab('storico', this)">🚚 Storico spostamenti</button>
+</div>
+
+<div class="content">
+
+  <!-- TAB SCUOLE -->
+  <div id="tab-scuole" class="tab active">
+    <div class="toolbar">
+      <div class="filtri">
+        <select id="filtro-scuola" onchange="filterScuole()">
+          <option value="">Tutte le scuole</option>
+        </select>
+        <input type="text" id="cerca-scuole" placeholder="🔍 Cerca ausilio..." oninput="filterScuole()" style="min-width:200px;">
+      </div>
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <span class="counter" id="counter-scuole"></span>
+        <button class="btn-export" onclick="exportExcel('scuole')">⬇ Scarica Excel</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="table-scuole">
+        <thead>
+          <tr>
+            <th>ID Inventario</th>
+            <th>Codice</th>
+            <th>Ausilio</th>
+            <th>Scuola</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-scuole">
+          <tr><td colspan="4" class="empty">Caricamento...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB MAGAZZINO -->
+  <div id="tab-magazzino" class="tab">
+    <div class="toolbar">
+      <div class="filtri">
+        <input type="text" id="cerca-magazzino" placeholder="🔍 Cerca ausilio..." oninput="filterMagazzino()" style="min-width:250px;">
+      </div>
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <span class="counter" id="counter-magazzino"></span>
+        <button class="btn-export" onclick="exportExcel('magazzino')">⬇ Scarica Excel</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="table-magazzino">
+        <thead>
+          <tr>
+            <th>ID Inventario</th>
+            <th>Codice</th>
+            <th>Ausilio</th>
+            <th>Categoria</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-magazzino">
+          <tr><td colspan="4" class="empty">Caricamento...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB STORICO -->
+  <div id="tab-storico" class="tab">
+    <div class="toolbar">
+      <div class="filtri">
+        <input type="text" id="cerca-storico" placeholder="🔍 Cerca..." oninput="filterStorico()" style="min-width:250px;">
+      </div>
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <span class="counter" id="counter-storico"></span>
+        <button class="btn-export" onclick="exportExcel('storico')">⬇ Scarica Excel</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="table-storico">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>ID Inventario</th>
+            <th>Ausilio</th>
+            <th>Da</th>
+            <th>A</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-storico">
+          <tr><td colspan="6" class="empty">Nessuno spostamento registrato</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let datiScuole = [];
+let datiMagazzino = [];
+let datiStorico = [];
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function fmtData(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+// ===== SCUOLE =====
+async function loadScuole() {
+  const res = await fetch('/api/ausili?posizione_tipo=scuola');
+  // Get all ausili and filter by type
+  const resAll = await fetch('/api/ausili');
+  const all = await resAll.json();
+  datiScuole = all.filter(a => a.posizione_tipo === 'scuola');
+
+  // Populate school filter
+  const scuoleUniche = [...new Set(datiScuole.map(a => a.posizione_attuale))].sort();
+  const sel = document.getElementById('filtro-scuola');
+  scuoleUniche.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s;
+    sel.appendChild(opt);
+  });
+
+  renderScuole(datiScuole);
+}
+
+function filterScuole() {
+  const scuola = document.getElementById('filtro-scuola').value;
+  const q = document.getElementById('cerca-scuole').value.toLowerCase();
+  const filtered = datiScuole.filter(a => {
+    const matchScuola = !scuola || a.posizione_attuale === scuola;
+    const matchQ = !q || a.nome.toLowerCase().includes(q) || String(a.inv_id).includes(q) || (a.codice && a.codice.toLowerCase().includes(q));
+    return matchScuola && matchQ;
+  });
+  renderScuole(filtered);
+}
+
+function renderScuole(data) {
+  document.getElementById('counter-scuole').textContent = data.length + ' ausili';
+  const tbody = document.getElementById('tbody-scuole');
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Nessun ausilio trovato</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(a => `
+    <tr>
+      <td><strong>${a.inv_id || '—'}</strong></td>
+      <td style="color:#6b7280; font-size:0.82rem;">${a.codice || '—'}</td>
+      <td>${a.nome}</td>
+      <td><span class="badge scuola">${a.posizione_attuale}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ===== MAGAZZINO =====
+async function loadMagazzino() {
+  const res = await fetch('/api/ausili');
+  const all = await res.json();
+  datiMagazzino = all.filter(a => a.posizione_tipo === 'magazzino');
+  renderMagazzino(datiMagazzino);
+}
+
+function filterMagazzino() {
+  const q = document.getElementById('cerca-magazzino').value.toLowerCase();
+  const filtered = datiMagazzino.filter(a =>
+    !q || a.nome.toLowerCase().includes(q) || String(a.inv_id).includes(q) || (a.codice && a.codice.toLowerCase().includes(q))
+  );
+  renderMagazzino(filtered);
+}
+
+function renderMagazzino(data) {
+  document.getElementById('counter-magazzino').textContent = data.length + ' ausili';
+  const tbody = document.getElementById('tbody-magazzino');
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Nessun ausilio trovato</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(a => `
+    <tr>
+      <td><strong>${a.inv_id || '—'}</strong></td>
+      <td style="color:#6b7280; font-size:0.82rem;">${a.codice || '—'}</td>
+      <td>${a.nome}</td>
+      <td style="font-size:0.82rem;">${a.categoria || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+// ===== STORICO =====
+async function loadStorico() {
+  const res = await fetch('/api/spostamenti');
+  if (!res.ok) { datiStorico = []; return; }
+  datiStorico = await res.json();
+  renderStorico(datiStorico);
+}
+
+function filterStorico() {
+  const q = document.getElementById('cerca-storico').value.toLowerCase();
+  const filtered = datiStorico.filter(s =>
+    !q || (s.ausilio_nome && s.ausilio_nome.toLowerCase().includes(q)) ||
+    s.da.toLowerCase().includes(q) || s.a.toLowerCase().includes(q)
+  );
+  renderStorico(filtered);
+}
+
+function renderStorico(data) {
+  document.getElementById('counter-storico').textContent = data.length + ' spostamenti';
+  const tbody = document.getElementById('tbody-storico');
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Nessuno spostamento registrato</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(s => `
+    <tr>
+      <td>${fmtData(s.data)}</td>
+      <td>${s.inv_id || '—'}</td>
+      <td>${s.ausilio_nome || '—'}</td>
+      <td>${s.da}</td>
+      <td><strong>${s.a}</strong></td>
+      <td style="color:#6b7280; font-size:0.85rem;">${s.note || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+// ===== EXPORT EXCEL =====
+function exportExcel(tipo) {
+  let data, filename, headers;
+
+  if (tipo === 'scuole') {
+    headers = ['ID Inventario', 'Codice', 'Ausilio', 'Scuola'];
+    const q = document.getElementById('cerca-scuole').value.toLowerCase();
+    const scuola = document.getElementById('filtro-scuola').value;
+    data = datiScuole
+      .filter(a => {
+        const matchScuola = !scuola || a.posizione_attuale === scuola;
+        const matchQ = !q || a.nome.toLowerCase().includes(q);
+        return matchScuola && matchQ;
+      })
+      .map(a => [a.inv_id, a.codice, a.nome, a.posizione_attuale]);
+    filename = 'ausili_nelle_scuole.xlsx';
+  } else if (tipo === 'magazzino') {
+    headers = ['ID Inventario', 'Codice', 'Ausilio', 'Categoria'];
+    const q = document.getElementById('cerca-magazzino').value.toLowerCase();
+    data = datiMagazzino
+      .filter(a => !q || a.nome.toLowerCase().includes(q))
+      .map(a => [a.inv_id, a.codice, a.nome, a.categoria]);
+    filename = 'magazzino_ausili.xlsx';
+  } else {
+    headers = ['Data', 'ID Inventario', 'Ausilio', 'Da', 'A', 'Note'];
+    data = datiStorico.map(s => [
+      fmtData(s.data), s.inv_id, s.ausilio_nome, s.da, s.a, s.note || ''
+    ]);
+    filename = 'storico_spostamenti.xlsx';
+  }
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+
+  // Style header row width
+  ws['!cols'] = headers.map(() => ({ wch: 30 }));
+
+  XLSX.utils.book_append_sheet(wb, ws, tipo);
+  XLSX.writeFile(wb, filename);
+}
+
+// Init
+loadScuole();
+loadMagazzino();
+loadStorico();
+</script>
+</body>
+</html>

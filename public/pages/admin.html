@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Piattaforma Ausili Genova</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; }
+    .topbar {
+      background: #003f7f;
+      color: white;
+      padding: 0.9rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar h1 { font-size: 1.1rem; font-weight: 600; }
+    .topbar small { opacity: 0.75; font-size: 0.8rem; }
+    .nav {
+      background: #002d5c;
+      display: flex;
+      gap: 0;
+    }
+    .nav-btn {
+      padding: 0.75rem 1.5rem;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav-btn.active {
+      color: white;
+      border-bottom-color: #60a5fa;
+      background: rgba(255,255,255,0.05);
+    }
+    .content { padding: 1.5rem 2rem; max-width: 1200px; margin: 0 auto; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 1.2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .stat-card .num { font-size: 2rem; font-weight: 700; color: #003f7f; }
+    .stat-card .lbl { font-size: 0.8rem; color: #6b7280; margin-top: 0.2rem; }
+
+    /* Filtri */
+    .filtri {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .filtri select, .filtri input {
+      padding: 0.5rem 0.75rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 7px;
+      font-size: 0.88rem;
+      background: white;
+    }
+
+    /* Tabella */
+    .table-wrap { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th {
+      background: #f8fafc;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 1.5px solid #e5e7eb;
+      white-space: nowrap;
+    }
+    td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid #f3f4f6;
+      vertical-align: middle;
+    }
+    tr:hover td { background: #f9fafb; }
+    tr:last-child td { border-bottom: none; }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.in_attesa { background: #fef3c7; color: #92400e; }
+    .badge.in_corso { background: #dbeafe; color: #1e40af; }
+    .badge.chiusa { background: #dcfce7; color: #166534; }
+    .badge.urgente { background: #fee2e2; color: #991b1b; }
+    .badge.normale { background: #f3f4f6; color: #374151; }
+    .badge.magazzino { background: #e0e7ff; color: #3730a3; }
+    .badge.scuola { background: #dcfce7; color: #166534; }
+
+    /* Pulsanti azione */
+    .btn {
+      padding: 0.3rem 0.7rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 500;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.8; }
+    .btn-blue { background: #dbeafe; color: #1e40af; }
+    .btn-green { background: #dcfce7; color: #166534; }
+    .btn-red { background: #fee2e2; color: #991b1b; }
+    .btn-orange { background: #ffedd5; color: #9a3412; }
+
+    /* Modal spostamento */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal h3 { margin-bottom: 1rem; color: #003f7f; }
+    .modal select, .modal textarea, .modal input {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 7px;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      font-family: inherit;
+    }
+    .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem; }
+    .empty { text-align: center; color: #9ca3af; padding: 3rem; font-size: 0.95rem; }
+
+    @media (max-width: 768px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .content { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>🏛️ Piattaforma Ausili — Comune di Genova</h1>
+    <small>Pannello di amministrazione</small>
+  </div>
+  <a href="/pages/segnala.html" target="_blank" style="color:white; font-size:0.85rem; opacity:0.8;">
+    📨 Pagina segnalazioni →
+  </a>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showTab('segnalazioni')">📋 Segnalazioni</button>
+  <button class="nav-btn" onclick="showTab('inventario')">📦 Inventario</button>
+  <button class="nav-btn" onclick="showTab('spostamenti')">🚚 Spostamenti</button>
+</div>
+
+<div class="content">
+
+  <!-- TAB SEGNALAZIONI -->
+  <div id="tab-segnalazioni" class="tab active">
+    <div class="stats" id="stats-segnalazioni">
+      <div class="stat-card"><div class="num" id="s-totale">—</div><div class="lbl">Totale segnalazioni</div></div>
+      <div class="stat-card"><div class="num" id="s-attesa">—</div><div class="lbl">In attesa</div></div>
+      <div class="stat-card"><div class="num" id="s-corso">—</div><div class="lbl">In corso</div></div>
+      <div class="stat-card"><div class="num" id="s-chiuse">—</div><div class="lbl">Chiuse</div></div>
+    </div>
+    <div class="filtri">
+      <select id="filtro-stato" onchange="loadSegnalazioni()">
+        <option value="">Tutti gli stati</option>
+        <option value="in_attesa">In attesa</option>
+        <option value="in_corso">In corso</option>
+        <option value="chiusa">Chiusa</option>
+      </select>
+      <select id="filtro-tipo" onchange="loadSegnalazioni()">
+        <option value="">Tutti i tipi</option>
+        <option>Manutenzione straordinaria</option>
+        <option>Manutenzione ordinaria</option>
+        <option>Trasporto / Spostamento</option>
+        <option>Pulizia e disinfezione</option>
+        <option>Consulenza tecnica</option>
+        <option>Rottamazione</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Data</th>
+            <th>Priorità</th>
+            <th>Tipo</th>
+            <th>Scuola</th>
+            <th>Ausilio</th>
+            <th>Funzionario</th>
+            <th>Stato</th>
+            <th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-segnalazioni">
+          <tr><td colspan="9" class="empty">Caricamento...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB INVENTARIO -->
+  <div id="tab-inventario" class="tab">
+    <div class="filtri">
+      <select id="filtro-posizione" onchange="loadInventario()">
+        <option value="">Tutte le posizioni</option>
+        <option value="magazzino">Magazzino</option>
+      </select>
+      <input type="text" id="filtro-cerca" placeholder="🔍 Cerca per nome o codice..." oninput="filterInventario()" style="min-width:250px;">
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID Inventario</th>
+            <th>Codice</th>
+            <th>Nome</th>
+            <th>Categoria</th>
+            <th>Posizione attuale</th>
+            <th>Tipo</th>
+            <th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-inventario">
+          <tr><td colspan="7" class="empty">Caricamento...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB SPOSTAMENTI -->
+  <div id="tab-spostamenti" class="tab">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Ausilio</th>
+            <th>Da</th>
+            <th>A</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-spostamenti">
+          <tr><td colspan="5" class="empty">Caricamento...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal spostamento -->
+<div class="modal-overlay" id="modal-sposta">
+  <div class="modal">
+    <h3>🚚 Sposta Ausilio</h3>
+    <p style="font-size:0.85rem; color:#6b7280; margin-bottom:1rem;" id="modal-ausilio-nome"></p>
+    <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:0.3rem;">Nuova destinazione</label>
+    <select id="modal-destinazione"></select>
+    <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:0.3rem;">Note (opzionale)</label>
+    <textarea id="modal-note" placeholder="Es. Spostamento per inizio anno scolastico..." rows="3"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-red" onclick="chiudiModal()">Annulla</button>
+      <button class="btn btn-green" onclick="confermaSposta()">✓ Conferma spostamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal dettaglio segnalazione -->
+<div class="modal-overlay" id="modal-dettaglio">
+  <div class="modal">
+    <h3>📋 Dettaglio Segnalazione</h3>
+    <div id="modal-dettaglio-body" style="font-size:0.9rem; line-height:1.8;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-blue" onclick="chiudiModalDettaglio()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let ausiliAll = [];
+let scuoleAll = [];
+let ausilioSposta = null;
+
+// Navigazione tab
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'segnalazioni') loadSegnalazioni();
+  if (name === 'inventario') loadInventario();
+  if (name === 'spostamenti') loadSpostamenti();
+}
+
+// Formatta data
+function fmtData(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+// ===== SEGNALAZIONI =====
+async function loadSegnalazioni() {
+  const stato = document.getElementById('filtro-stato').value;
+  const tipo = document.getElementById('filtro-tipo').value;
+  let url = '/api/segnalazioni';
+  if (stato) url += '?stato=' + stato;
+
+  const res = await fetch(url);
+  let data = await res.json();
+
+  if (tipo) data = data.filter(s => s.tipo === tipo);
+
+  // Stats
+  const tutti = data;
+  document.getElementById('s-totale').textContent = tutti.length;
+  document.getElementById('s-attesa').textContent = tutti.filter(s => s.stato === 'in_attesa').length;
+  document.getElementById('s-corso').textContent = tutti.filter(s => s.stato === 'in_corso').length;
+  document.getElementById('s-chiuse').textContent = tutti.filter(s => s.stato === 'chiusa').length;
+
+  const tbody = document.getElementById('tbody-segnalazioni');
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">Nessuna segnalazione trovata</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(s => `
+    <tr>
+      <td><strong>#${s.id}</strong></td>
+      <td>${fmtData(s.created_at)}</td>
+      <td><span class="badge ${s.urgente ? 'urgente' : 'normale'}">${s.urgente ? '🔴 Urgente' : '🟡 Normale'}</span></td>
+      <td>${s.tipo}</td>
+      <td>${s.scuola}</td>
+      <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.ausilio_nome || '—'}</td>
+      <td>${s.nome_funzionario}</td>
+      <td><span class="badge ${s.stato}">${s.stato.replace('_', ' ')}</span></td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-blue" onclick="vediDettaglio(${s.id})">Dettaglio</button>
+        ${s.stato === 'in_attesa' ? `<button class="btn btn-orange" onclick="aggiornaStato(${s.id}, 'in_corso')">▶ In corso</button>` : ''}
+        ${s.stato === 'in_corso' ? `<button class="btn btn-green" onclick="aggiornaStato(${s.id}, 'chiusa')">✓ Chiudi</button>` : ''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+let segnalazioniCache = [];
+async function vediDettaglio(id) {
+  const res = await fetch('/api/segnalazioni');
+  const data = await res.json();
+  const s = data.find(x => x.id === id);
+  if (!s) return;
+
+  document.getElementById('modal-dettaglio-body').innerHTML = `
+    <table style="width:100%; font-size:0.88rem;">
+      <tr><td style="color:#6b7280; width:40%">ID</td><td><strong>#${s.id}</strong></td></tr>
+      <tr><td style="color:#6b7280">Data</td><td>${fmtData(s.created_at)}</td></tr>
+      <tr><td style="color:#6b7280">Priorità</td><td>${s.urgente ? '🔴 Urgente (24h)' : '🟡 Normale (48h)'}</td></tr>
+      <tr><td style="color:#6b7280">Tipo</td><td>${s.tipo}</td></tr>
+      <tr><td style="color:#6b7280">Scuola</td><td>${s.scuola}</td></tr>
+      <tr><td style="color:#6b7280">Ausilio</td><td>${s.ausilio_nome || '—'}</td></tr>
+      <tr><td style="color:#6b7280">Note</td><td>${s.note || '—'}</td></tr>
+      <tr><td style="color:#6b7280">Funzionario</td><td>${s.nome_funzionario}</td></tr>
+      <tr><td style="color:#6b7280">Email</td><td><a href="mailto:${s.email_funzionario}">${s.email_funzionario}</a></td></tr>
+      <tr><td style="color:#6b7280">Stato</td><td><span class="badge ${s.stato}">${s.stato.replace('_',' ')}</span></td></tr>
+      ${s.data_chiusura ? `<tr><td style="color:#6b7280">Chiusa il</td><td>${fmtData(s.data_chiusura)}</td></tr>` : ''}
+    </table>
+  `;
+  document.getElementById('modal-dettaglio').classList.add('open');
+}
+
+function chiudiModalDettaglio() {
+  document.getElementById('modal-dettaglio').classList.remove('open');
+}
+
+async function aggiornaStato(id, stato) {
+  await fetch('/api/segnalazioni/' + id + '/stato', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stato }),
+  });
+  loadSegnalazioni();
+}
+
+// ===== INVENTARIO =====
+async function loadInventario() {
+  const posizione = document.getElementById('filtro-posizione').value;
+  let url = '/api/ausili';
+  if (posizione) url += '?posizione=' + encodeURIComponent(posizione);
+
+  const res = await fetch(url);
+  ausiliAll = await res.json();
+  renderInventario(ausiliAll);
+}
+
+function filterInventario() {
+  const q = document.getElementById('filtro-cerca').value.toLowerCase();
+  const filtered = ausiliAll.filter(a =>
+    a.nome.toLowerCase().includes(q) ||
+    (a.codice && a.codice.toLowerCase().includes(q)) ||
+    String(a.inv_id).includes(q)
+  );
+  renderInventario(filtered);
+}
+
+function renderInventario(data) {
+  const tbody = document.getElementById('tbody-inventario');
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Nessun ausilio trovato</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(a => `
+    <tr>
+      <td><strong>${a.inv_id || '—'}</strong></td>
+      <td style="font-size:0.8rem; color:#6b7280;">${a.codice}</td>
+      <td>${a.nome}</td>
+      <td style="font-size:0.8rem;">${a.categoria || '—'}</td>
+      <td><strong>${a.posizione_attuale}</strong></td>
+      <td><span class="badge ${a.posizione_tipo}">${a.posizione_tipo}</span></td>
+      <td>
+        <button class="btn btn-orange" onclick="apriSposta(${a.id}, '${a.nome.replace(/'/g,"\\'")}', '${a.posizione_attuale.replace(/'/g,"\\'")}')">🚚 Sposta</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ===== SPOSTAMENTI =====
+async function loadSpostamenti() {
+  // Carica tutti gli ausili e mostra la history degli spostamenti
+  const res = await fetch('/api/ausili');
+  const ausili = await res.json();
+
+  // Fetch spostamenti per ogni ausilio (usiamo l'endpoint singolo)
+  const spostamentiRes = await fetch('/api/spostamenti');
+  let data = [];
+  if (spostamentiRes.ok) {
+    data = await spostamentiRes.json();
+  }
+
+  const tbody = document.getElementById('tbody-spostamenti');
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Nessuno spostamento registrato</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(s => `
+    <tr>
+      <td>${fmtData(s.data)}</td>
+      <td>${s.ausilio_nome || 'ID ' + s.ausilio_id}</td>
+      <td>${s.da}</td>
+      <td><strong>${s.a}</strong></td>
+      <td style="font-size:0.85rem; color:#6b7280;">${s.note || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+// ===== MODAL SPOSTAMENTO =====
+async function apriSposta(id, nome, posizioneAttuale) {
+  ausilioSposta = { id, nome, posizioneAttuale };
+  document.getElementById('modal-ausilio-nome').textContent = nome + ' — attualmente in: ' + posizioneAttuale;
+
+  // Carica scuole
+  if (scuoleAll.length === 0) {
+    const res = await fetch('/api/ausili/meta/scuole');
+    scuoleAll = await res.json();
+  }
+
+  const sel = document.getElementById('modal-destinazione');
+  sel.innerHTML = scuoleAll
+    .map(s => `<option value="${s.nome}" ${s.nome === posizioneAttuale ? 'disabled' : ''}>${s.nome}</option>`)
+    .join('');
+
+  document.getElementById('modal-note').value = '';
+  document.getElementById('modal-sposta').classList.add('open');
+}
+
+function chiudiModal() {
+  document.getElementById('modal-sposta').classList.remove('open');
+  ausilioSposta = null;
+}
+
+async function confermaSposta() {
+  if (!ausilioSposta) return;
+  const nuova_posizione = document.getElementById('modal-destinazione').value;
+  const note = document.getElementById('modal-note').value.trim();
+
+  const res = await fetch('/api/ausili/' + ausilioSposta.id + '/sposta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nuova_posizione, note }),
+  });
+
+  if (res.ok) {
+    chiudiModal();
+    loadInventario();
+  } else {
+    alert('Errore durante lo spostamento');
+  }
+}
+
+// Init
+loadSegnalazioni();
+</script>
+</body>
+</html>
