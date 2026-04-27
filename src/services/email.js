@@ -1,50 +1,37 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import 'dotenv/config';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const DESTINATARI = [
   'luca.nic1893@gmail.com',
   'piemonteseluca7@gmail.com',
 ];
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
 export async function sendNotifica(segnalazione) {
   const { id, tipo, urgente, scuola, ausilio_nome, note, nome_funzionario, email_funzionario } = segnalazione;
 
-  const urgenzaLabel = urgente ? '🔴 URGENTE (24h)' : '🟡 Normale (48h)';
-  const ausilioInfo = ausilio_nome ? `\nAusilio: ${ausilio_nome}` : '';
-  const noteInfo = note ? `\nNote: ${note}` : '';
+  const urgenzaLabel = urgente ? 'URGENTE (24h)' : 'Normale (48h)';
+  const ausilioInfo = ausilio_nome ? `<br><strong>Ausilio:</strong> ${ausilio_nome}` : '';
+  const noteInfo = note ? `<br><strong>Note:</strong> ${note}` : '';
 
-  const testo = `
-Nuova segnalazione ricevuta — ID #${id}
+  const html = `
+    <h2>Nuova segnalazione #${id}</h2>
+    <p><strong>Priorita:</strong> ${urgenzaLabel}</p>
+    <p><strong>Tipo intervento:</strong> ${tipo}</p>
+    <p><strong>Scuola:</strong> ${scuola}${ausilioInfo}${noteInfo}</p>
+    <hr>
+    <p><strong>Inviata da:</strong> ${nome_funzionario} (${email_funzionario})</p>
+    <p><strong>Data:</strong> ${new Date().toLocaleString('it-IT')}</p>
+  `;
 
-Priorità: ${urgenzaLabel}
-Tipo intervento: ${tipo}
-Scuola: ${scuola}${ausilioInfo}${noteInfo}
-
-Inviata da: ${nome_funzionario} (${email_funzionario})
-Data: ${new Date().toLocaleString('it-IT')}
-
----
-Gestisci la segnalazione dal pannello admin:
-http://localhost:3000/pages/admin.html
-  `.trim();
-
-  await transporter.sendMail({
-    from: `"Piattaforma Ausili Genova" <${process.env.EMAIL_USER}>`,
-    to: DESTINATARI.join(', '),
-    replyTo: email_funzionario,
-    subject: `[${urgente ? 'URGENTE' : 'Nuova'}] Segnalazione #${id} — ${tipo} — ${scuola}`,
-    text: testo,
+  const result = await resend.emails.send({
+    from: 'Piattaforma Ausili <onboarding@resend.dev>',
+    to: DESTINATARI,
+    reply_to: email_funzionario,
+    subject: `[${urgente ? 'URGENTE' : 'Nuova'}] Segnalazione #${id} - ${tipo} - ${scuola}`,
+    html,
   });
 
-  console.log('Email inviata a:', DESTINATARI.join(', '));
+  console.log('Email inviata:', JSON.stringify(result));
 }
