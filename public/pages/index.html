@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accesso — Kabel Ortopedia</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:#1a3a5c;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+    .card{background:#fff;border-radius:16px;padding:2.5rem 2rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center}
+    .logo-wrap{margin-bottom:1.5rem}
+    .logo-wrap img{width:220px;border-radius:8px}
+    .subtitle{color:#6b7a8d;font-size:.88rem;margin-bottom:2rem}
+    .field{text-align:left;margin-bottom:1rem}
+    label{display:block;font-size:.8rem;font-weight:600;color:#6b7a8d;margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em}
+    input{width:100%;padding:.75rem 1rem;border:1.5px solid #dde3ea;border-radius:8px;font-size:1rem;font-family:'DM Sans',sans-serif;transition:border-color .2s}
+    input:focus{outline:none;border-color:#1a3a5c}
+    .btn{width:100%;padding:.9rem;background:#e8a020;color:#1a3a5c;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s;font-family:'DM Sans',sans-serif;margin-top:.5rem;letter-spacing:.02em}
+    .btn:hover{background:#d4911a}
+    .errmsg{display:none;background:#fef2f2;border:1.5px solid #ef4444;color:#991b1b;padding:.75rem 1rem;border-radius:8px;margin-top:.75rem;font-size:.9rem}
+    .footer{margin-top:1.5rem;font-size:.75rem;color:#9ca3af}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-wrap">
+    <img src="/images/logo.png" alt="Kabel Ortopedia">
+  </div>
+  <p class="subtitle">Piattaforma Gestione Ausili — Comune di Genova</p>
+  <div class="field">
+    <label for="pwd">Password di accesso</label>
+    <input type="password" id="pwd" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')accedi()">
+  </div>
+  <button class="btn" onclick="accedi()">Accedi →</button>
+  <div class="errmsg" id="err">Password errata. Riprova.</div>
+  <div class="footer">Kabel S.r.l. © 2026 — Accesso riservato</div>
+</div>
+<script>
+function accedi(){
+  const pwd=document.getElementById('pwd').value;
+  if(pwd==='Comune26'){
+    sessionStorage.setItem('kabel_auth','ok');
+    window.location.href='/pages/segnala.html';
+  } else {
+    document.getElementById('err').style.display='block';
+    document.getElementById('pwd').value='';
+    document.getElementById('pwd').focus();
+  }
+}
+</script>
+</body>
+</html>
